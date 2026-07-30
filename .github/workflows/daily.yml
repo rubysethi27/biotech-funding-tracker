@@ -32,6 +32,6 @@ jobs:
         run: |
           git config user.name "funding-tracker-bot"
           git config user.email "actions@github.com"
-          git add funding.db dashboard/index.html
+          git add funding.db docs/index.html
           git diff --staged --quiet || git commit -m "Daily funding data update"
           git push
