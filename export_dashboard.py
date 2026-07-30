@@ -10,8 +10,8 @@ from collections import Counter
 from db import get_connection, init_db
 
 BASE = os.path.dirname(__file__)
-TEMPLATE_PATH = os.path.join(BASE, "dashboard", "template.html")
-OUTPUT_PATH = os.path.join(BASE, "dashboard", "index.html")
+TEMPLATE_PATH = os.path.join(BASE, "docs", "template.html")
+OUTPUT_PATH = os.path.join(BASE, "docs", "index.html")
 
 
 def build_dashboard_data():
