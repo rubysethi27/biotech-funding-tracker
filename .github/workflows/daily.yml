@@ -1,0 +1,37 @@
+name: Daily Funding Tracker Update
+
+on:
+  schedule:
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-tracker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run daily pipeline
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python run_daily.py
+
+      - name: Commit updated data and dashboard
+        run: |
+          git config user.name "funding-tracker-bot"
+          git config user.email "actions@github.com"
+          git add funding.db dashboard/index.html
+          git diff --staged --quiet || git commit -m "Daily funding data update"
+          git push
