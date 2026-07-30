@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Biotech & Healthtech Funding Tracker</title>
+<style>
+  :root {
+    --bg: #0d0f12;
+    --card: #16191d;
+    --border: #262a30;
+    --text: #f2f2f0;
+    --muted: #9a9ea5;
+    --accent: #ffffff;
+    --stage-seed: #6b8f71;
+    --stage-a: #c9a24b;
+    --stage-b: #7a8fc9;
+    --stage-c: #b06bc9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 32px 20px 80px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header { margin-bottom: 24px; }
+  h1 { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .round-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .round-row:last-child { border-bottom: none; }
+  .round-left { display: flex; gap: 12px; align-items: flex-start; }
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    background: #22262c;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--muted);
+    flex-shrink: 0;
+  }
+  .company { font-weight: 600; font-size: 14px; }
+  .subline { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .stage-tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-right: 6px;
+    font-weight: 600;
+  }
+  .stage-seed { background: rgba(107,143,113,0.2); color: var(--stage-seed); }
+  .stage-a { background: rgba(201,162,75,0.2); color: var(--stage-a); }
+  .stage-b { background: rgba(122,143,201,0.2); color: var(--stage-b); }
+  .stage-c { background: rgba(176,107,201,0.2); color: var(--stage-c); }
+  .stage-other { background: rgba(154,158,165,0.2); color: var(--muted); }
+  .round-right { text-align: right; }
+  .amount { font-weight: 700; font-size: 14px; }
+  .led-by { color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 13px;
+  }
+  .stat-row .bar-bg {
+    flex: 1;
+    height: 6px;
+    background: #22262c;
+    border-radius: 3px;
+    margin: 0 10px;
+    overflow: hidden;
+    align-self: center;
+  }
+  .stat-row .bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+  .footer-note {
+    color: var(--muted);
+    font-size: 11px;
+    text-align: center;
+    margin-top: 20px;
+  }
+  .empty-state {
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    padding: 24px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Funding Dashboard</h1>
+    <div class="meta" id="meta-line">Loading...</div>
+  </header>
+
+  <div class="card">
+    <div class="section-title">Recent Rounds</div>
+    <div id="rounds-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">By Stage</div>
+    <div id="stage-breakdown"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Top Leads This Quarter</div>
+    <div id="top-leads"></div>
+  </div>
+
+  <div class="footer-note" id="footer-note"></div>
+</div>
+
+<script>
+// DATA_PLACEHOLDER — export_dashboard.py replaces this with real data
+const DATA = {"rounds": [{"company": "Scribe Therapeutics", "stage": "Other", "amount_usd_millions": 129.0, "sector": "Gene editing", "location": null, "lead_investor": null, "added_at": "2026-07-30 19:39:39"}, {"company": "Candid Health", "stage": "Series D+", "amount_usd_millions": 120.0, "sector": "Digital health", "location": null, "lead_investor": "Sixth Street Growth", "added_at": "2026-07-30 19:39:36"}, {"company": "Throne Science", "stage": "Series A", "amount_usd_millions": 10.0, "sector": "Digital health", "location": null, "lead_investor": null, "added_at": "2026-07-30 19:39:33"}, {"company": "Aurenar", "stage": "Seed", "amount_usd_millions": 5.7, "sector": "Medical device", "location": null, "lead_investor": null, "added_at": "2026-07-30 19:39:31"}, {"company": "Procode AI", "stage": "Series A", "amount_usd_millions": 10.0, "sector": "Digital health", "location": null, "lead_investor": null, "added_at": "2026-07-30 19:39:29"}], "stage_breakdown": [{"stage": "Series A", "pct": 40}, {"stage": "Other", "pct": 20}, {"stage": "Series D+", "pct": 20}, {"stage": "Seed", "pct": 20}], "top_leads": [{"investor": "Sixth Street Growth", "count": 1}], "total_rounds_all_time": 5, "updated_at": "Jul 30, 2026 7:39 PM"};
+
+function stageClass(stage) {
+  if (!stage) return "stage-other";
+  const s = stage.toLowerCase();
+  if (s.includes("seed")) return "stage-seed";
+  if (s.includes("a")) return "stage-a";
+  if (s.includes("b")) return "stage-b";
+  if (s.includes("c") || s.includes("d")) return "stage-c";
+  return "stage-other";
+}
+
+function initials(name) {
+  return (name || "?").split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase();
+}
+
+function formatAmount(m) {
+  if (m == null) return "—";
+  return m >= 1000 ? "$" + (m / 1000).toFixed(1) + "B" : "$" + m.toFixed(1) + "M";
+}
+
+function render() {
+  const rounds = DATA.rounds || [];
+  document.getElementById("meta-line").textContent =
+    rounds.length + " rounds tracked · updated " + DATA.updated_at;
+
+  const list = document.getElementById("rounds-list");
+  if (rounds.length === 0) {
+    list.innerHTML = '<div class="empty-state">No rounds yet — run run_daily.py to fetch data.</div>';
+  } else {
+    list.innerHTML = rounds.slice(0, 25).map(r => `
+      <div class="round-row">
+        <div class="round-left">
+          <div class="avatar">${initials(r.company)}</div>
+          <div>
+            <div class="company">${r.company}</div>
+            <div class="subline">
+              <span class="stage-tag ${stageClass(r.stage)}">${r.stage || "—"}</span>
+              ${r.sector || ""}${r.location ? " · " + r.location : ""}
+            </div>
+          </div>
+        </div>
+        <div class="round-right">
+          <div class="amount">${formatAmount(r.amount_usd_millions)}</div>
+          <div class="led-by">${r.lead_investor ? "led by " + r.lead_investor : ""}</div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  const stageBreakdown = document.getElementById("stage-breakdown");
+  const stages = DATA.stage_breakdown || [];
+  if (stages.length === 0) {
+    stageBreakdown.innerHTML = '<div class="empty-state">No data yet</div>';
+  } else {
+    const max = Math.max(...stages.map(s => s.pct));
+    stageBreakdown.innerHTML = stages.map(s => `
+      <div class="stat-row">
+        <span>${s.stage}</span>
+        <span class="bar-bg"><span class="bar-fill" style="width:${(s.pct / max) * 100}%"></span></span>
+        <span>${s.pct}%</span>
+      </div>
+    `).join("");
+  }
+
+  const topLeads = document.getElementById("top-leads");
+  const leads = DATA.top_leads || [];
+  if (leads.length === 0) {
+    topLeads.innerHTML = '<div class="empty-state">No data yet</div>';
+  } else {
+    topLeads.innerHTML = leads.map(l => `
+      <div class="stat-row">
+        <span>${l.investor}</span>
+        <span style="flex:1"></span>
+        <span>${l.count}</span>
+      </div>
+    `).join("");
+  }
+
+  document.getElementById("footer-note").textContent =
+    (DATA.total_rounds_all_time || 0) + " rounds tracked all-time";
+}
+
+render();
+</script>
+</body>
+</html>
