@@ -15,6 +15,7 @@
     --stage-a: #c9a24b;
     --stage-b: #7a8fc9;
     --stage-c: #b06bc9;
+    --type-tag-color: #d68a5c;
   }
   * { box-sizing: border-box; }
   body {
@@ -36,13 +37,16 @@
     margin-bottom: 12px;
   }
   .round-row {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .round-row:last-child { border-bottom: none; }
+  .round-top {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
   }
-  .round-row:last-child { border-bottom: none; }
   .round-left { display: flex; gap: 12px; align-items: flex-start; }
   .avatar {
     width: 34px; height: 34px;
@@ -54,7 +58,7 @@
   }
   .company { font-weight: 600; font-size: 14px; }
   .subline { color: var(--muted); font-size: 12px; margin-top: 2px; }
-  .stage-tag {
+  .stage-tag, .type-tag {
     display: inline-block;
     font-size: 10px;
     padding: 1px 6px;
@@ -67,9 +71,33 @@
   .stage-b { background: rgba(122,143,201,0.2); color: var(--stage-b); }
   .stage-c { background: rgba(176,107,201,0.2); color: var(--stage-c); }
   .stage-other { background: rgba(154,158,165,0.2); color: var(--muted); }
+  .type-tag { background: rgba(214,138,92,0.18); color: var(--type-tag-color); }
   .round-right { text-align: right; }
   .amount { font-weight: 700; font-size: 14px; }
   .led-by { color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .expand-hint { color: var(--muted); font-size: 10px; margin-top: 2px; }
+  .details {
+    display: none;
+    margin-top: 12px;
+    padding: 12px;
+    background: #101216;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .details.open { display: block; }
+  .details .row { margin-bottom: 6px; }
+  .details .label {
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    margin-right: 6px;
+  }
+  .details .rationale {
+    font-style: italic;
+    color: #c9cdd3;
+  }
   .section-title {
     font-size: 11px;
     text-transform: uppercase;
@@ -115,7 +143,7 @@
   </header>
 
   <div class="card">
-    <div class="section-title">Recent Rounds</div>
+    <div class="section-title">Recent Rounds — tap a row for details</div>
     <div id="rounds-list"></div>
   </div>
 
@@ -133,7 +161,6 @@
 </div>
 
 <script>
-// DATA_PLACEHOLDER — export_dashboard.py replaces this with real data
 const DATA = __DATA_JSON__;
 
 function stageClass(stage) {
@@ -155,69 +182,46 @@ function formatAmount(m) {
   return m >= 1000 ? "$" + (m / 1000).toFixed(1) + "B" : "$" + m.toFixed(1) + "M";
 }
 
-function render() {
+function esc(s) {
+  if (s == null) return "";
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function renderRounds() {
   const rounds = DATA.rounds || [];
   document.getElementById("meta-line").textContent =
-    rounds.length + " rounds tracked · updated " + DATA.updated_at;
+    (DATA.total_rounds_all_time || 0) + " rounds tracked · updated " + DATA.updated_at;
 
   const list = document.getElementById("rounds-list");
   if (rounds.length === 0) {
     list.innerHTML = '<div class="empty-state">No rounds yet — run run_daily.py to fetch data.</div>';
-  } else {
-    list.innerHTML = rounds.slice(0, 25).map(r => `
-      <div class="round-row">
+    return;
+  }
+
+  list.innerHTML = rounds.slice(0, 25).map((r, i) => `
+    <div class="round-row" onclick="toggleDetails('round-${i}')">
+      <div class="round-top">
         <div class="round-left">
-          <div class="avatar">${initials(r.company)}</div>
+          <div class="avatar">${esc(initials(r.company))}</div>
           <div>
-            <div class="company">${r.company}</div>
+            <div class="company">${esc(r.company)}</div>
             <div class="subline">
-              <span class="stage-tag ${stageClass(r.stage)}">${r.stage || "—"}</span>
-              ${r.sector || ""}${r.location ? " · " + r.location : ""}
+              <span class="stage-tag ${stageClass(r.stage)}">${esc(r.stage) || "—"}</span>
+              ${esc(r.sector) || ""}${r.location ? " · " + esc(r.location) : ""}
             </div>
           </div>
         </div>
         <div class="round-right">
           <div class="amount">${formatAmount(r.amount_usd_millions)}</div>
-          <div class="led-by">${r.lead_investor ? "led by " + r.lead_investor : ""}</div>
+          <div class="led-by">${r.lead_investor ? "led by " + esc(r.lead_investor) : ""}</div>
+          <div class="expand-hint">tap for details ▾</div>
         </div>
       </div>
-    `).join("");
-  }
-
-  const stageBreakdown = document.getElementById("stage-breakdown");
-  const stages = DATA.stage_breakdown || [];
-  if (stages.length === 0) {
-    stageBreakdown.innerHTML = '<div class="empty-state">No data yet</div>';
-  } else {
-    const max = Math.max(...stages.map(s => s.pct));
-    stageBreakdown.innerHTML = stages.map(s => `
-      <div class="stat-row">
-        <span>${s.stage}</span>
-        <span class="bar-bg"><span class="bar-fill" style="width:${(s.pct / max) * 100}%"></span></span>
-        <span>${s.pct}%</span>
-      </div>
-    `).join("");
-  }
-
-  const topLeads = document.getElementById("top-leads");
-  const leads = DATA.top_leads || [];
-  if (leads.length === 0) {
-    topLeads.innerHTML = '<div class="empty-state">No data yet</div>';
-  } else {
-    topLeads.innerHTML = leads.map(l => `
-      <div class="stat-row">
-        <span>${l.investor}</span>
-        <span style="flex:1"></span>
-        <span>${l.count}</span>
-      </div>
-    `).join("");
-  }
-
-  document.getElementById("footer-note").textContent =
-    (DATA.total_rounds_all_time || 0) + " rounds tracked all-time";
-}
-
-render();
-</script>
-</body>
-</html>
+      <div class="details" id="round-${i}">
+        ${r.mechanism_summary ? `<div class="row">${esc(r.mechanism_summary)}</div>` : ""}
+        ${r.modality ? `<div class="row"><span class="label">Modality</span>${esc(r.modality)}</div>` : ""}
+        ${r.target_indication ? `<div class="row"><span class="label">Indication</span>${esc(r.target_indication)}</div>` : ""}
+        ${r.trial_phase ? `<div class="row"><span class="label">Stage of development</span>${esc(r.trial_phase)}</div>` : ""}
+        ${r.lead_investor ?
