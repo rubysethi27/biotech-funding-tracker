@@ -224,4 +224,57 @@ function renderRounds() {
         ${r.modality ? `<div class="row"><span class="label">Modality</span>${esc(r.modality)}</div>` : ""}
         ${r.target_indication ? `<div class="row"><span class="label">Indication</span>${esc(r.target_indication)}</div>` : ""}
         ${r.trial_phase ? `<div class="row"><span class="label">Stage of development</span>${esc(r.trial_phase)}</div>` : ""}
-        ${r.lead_investor ?
+        ${r.lead_investor ? `<div class="row"><span class="label">Lead investor</span>${esc(r.lead_investor)}${r.lead_investor_type ? ' <span class="type-tag">' + esc(r.lead_investor_type) + '</span>' : ""}</div>` : ""}
+        ${r.lead_investor_rationale ? `<div class="row rationale">"${esc(r.lead_investor_rationale)}"</div>` : ""}
+        ${r.other_investors ? `<div class="row"><span class="label">Also participating</span>${esc(r.other_investors)}</div>` : ""}
+      </div>
+    </div>
+  `).join("");
+}
+
+function toggleDetails(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle("open");
+}
+
+function renderStageBreakdown() {
+  const stageBreakdown = document.getElementById("stage-breakdown");
+  const stages = DATA.stage_breakdown || [];
+  if (stages.length === 0) {
+    stageBreakdown.innerHTML = '<div class="empty-state">No data yet</div>';
+    return;
+  }
+  const max = Math.max(...stages.map(s => s.pct));
+  stageBreakdown.innerHTML = stages.map(s => `
+    <div class="stat-row">
+      <span>${esc(s.stage)}</span>
+      <span class="bar-bg"><span class="bar-fill" style="width:${(s.pct / max) * 100}%"></span></span>
+      <span>${s.pct}%</span>
+    </div>
+  `).join("");
+}
+
+function renderTopLeads() {
+  const topLeads = document.getElementById("top-leads");
+  const leads = DATA.top_leads || [];
+  if (leads.length === 0) {
+    topLeads.innerHTML = '<div class="empty-state">No data yet</div>';
+    return;
+  }
+  topLeads.innerHTML = leads.map(l => `
+    <div class="stat-row">
+      <span>${esc(l.investor)}</span>
+      <span style="flex:1"></span>
+      <span>${l.count}</span>
+    </div>
+  `).join("");
+}
+
+renderRounds();
+renderStageBreakdown();
+renderTopLeads();
+document.getElementById("footer-note").textContent =
+  (DATA.total_rounds_all_time || 0) + " rounds tracked all-time";
+</script>
+</body>
+</html>
