@@ -1,5 +1,5 @@
 """
-Reads current data from the database and bakes it into dashboard/index.html
+Reads current data from the database and bakes it into docs/index.html
 as embedded JSON (avoids browser CORS issues you'd get from loading a
 separate data file directly off disk).
 """
@@ -21,7 +21,9 @@ def build_dashboard_data():
 
     cur.execute("""
         SELECT company, stage, amount_usd_millions, sector, location,
-               lead_investor, added_at
+               lead_investor, lead_investor_type, lead_investor_rationale,
+               other_investors, modality, target_indication, trial_phase,
+               mechanism_summary, added_at
         FROM funding_rounds
         ORDER BY added_at DESC
     """)
@@ -30,7 +32,6 @@ def build_dashboard_data():
 
     total = len(rows)
 
-    # Stage breakdown as percentages
     stage_counts = Counter(r["stage"] or "Other" for r in rows)
     stage_breakdown = []
     if total > 0:
@@ -40,7 +41,6 @@ def build_dashboard_data():
                 "pct": round(100 * count / total),
             })
 
-    # Top leads (lead investors by number of rounds led)
     lead_counts = Counter(r["lead_investor"] for r in rows if r["lead_investor"])
     top_leads = [{"investor": inv, "count": c} for inv, c in lead_counts.most_common(5)]
 
