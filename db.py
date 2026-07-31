@@ -43,7 +43,13 @@ def init_db():
             sector TEXT,
             location TEXT,
             lead_investor TEXT,
+            lead_investor_type TEXT,
+            lead_investor_rationale TEXT,
             other_investors TEXT,
+            modality TEXT,
+            target_indication TEXT,
+            trial_phase TEXT,
+            mechanism_summary TEXT,
             source_url TEXT,
             source_name TEXT,
             summary TEXT,
@@ -51,6 +57,21 @@ def init_db():
             UNIQUE(company, amount_usd_millions, source_url)
         )
     """)
+
+    # Lightweight migration: add new columns if this is an existing
+    # database created before this update.
+    existing_cols = [row["name"] for row in cur.execute("PRAGMA table_info(funding_rounds)")]
+    new_cols = {
+        "lead_investor_type": "TEXT",
+        "lead_investor_rationale": "TEXT",
+        "modality": "TEXT",
+        "target_indication": "TEXT",
+        "trial_phase": "TEXT",
+        "mechanism_summary": "TEXT",
+    }
+    for col, coltype in new_cols.items():
+        if col not in existing_cols:
+            cur.execute(f"ALTER TABLE funding_rounds ADD COLUMN {col} {coltype}")
 
     conn.commit()
     conn.close()
