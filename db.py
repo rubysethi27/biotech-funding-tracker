@@ -18,8 +18,6 @@ def init_db():
     conn = get_connection()
     cur = conn.cursor()
 
-    # Raw articles pulled from RSS feeds, before AI extraction.
-    # This lets us avoid re-processing the same article twice.
     cur.execute("""
         CREATE TABLE IF NOT EXISTS raw_articles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,13 +25,13 @@ def init_db():
             source TEXT,
             title TEXT,
             summary TEXT,
+            full_text TEXT,
             published TEXT,
             processed INTEGER DEFAULT 0,
             fetched_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-    # Structured funding rounds extracted by Claude.
     cur.execute("""
         CREATE TABLE IF NOT EXISTS funding_rounds (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,8 +56,6 @@ def init_db():
         )
     """)
 
-    # Lightweight migration: add new columns if this is an existing
-    # database created before this update.
     existing_cols = [row["name"] for row in cur.execute("PRAGMA table_info(funding_rounds)")]
     new_cols = {
         "lead_investor_type": "TEXT",
@@ -73,8 +69,31 @@ def init_db():
         if col not in existing_cols:
             cur.execute(f"ALTER TABLE funding_rounds ADD COLUMN {col} {coltype}")
 
+    existing_article_cols = [row["name"] for row in cur.execute("PRAGMA table_info(raw_articles)")]
+    if "full_text" not in existing_article_cols:
+        cur.execute("ALTER TABLE raw_articles ADD COLUMN full_text TEXT")
+
     conn.commit()
     conn.close()
+
+
+def find_existing_round(cur, company, amount_usd_millions):
+    """
+    Checks whether a funding round for this company/amount already exists,
+    regardless of which article URL reported it. Prevents the same round
+    getting saved twice when multiple outlets cover the same news.
+    """
+    if not company:
+        return None
+    cur.execute("SELECT id, amount_usd_millions FROM funding_rounds WHERE lower(company) = lower(?)", (company,))
+    for row in cur.fetchall():
+        existing_amount = row["amount_usd_millions"]
+        if amount_usd_millions is None or existing_amount is None:
+            if amount_usd_millions == existing_amount:
+                return row["id"]
+        elif abs(existing_amount - amount_usd_millions) <= max(1.0, existing_amount * 0.05):
+            return row["id"]
+    return None
 
 
 if __name__ == "__main__":
