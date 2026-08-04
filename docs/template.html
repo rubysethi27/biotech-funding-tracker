@@ -227,6 +227,7 @@ function renderRounds() {
         ${r.lead_investor ? `<div class="row"><span class="label">Lead investor</span>${esc(r.lead_investor)}${r.lead_investor_type ? ' <span class="type-tag">' + esc(r.lead_investor_type) + '</span>' : ""}</div>` : ""}
         ${r.lead_investor_rationale ? `<div class="row rationale">"${esc(r.lead_investor_rationale)}"</div>` : ""}
         ${r.other_investors ? `<div class="row"><span class="label">Also participating</span>${esc(r.other_investors)}</div>` : ""}
+        ${r.added_display ? `<div class="row"><span class="label">Added to tracker</span>${esc(r.added_display)}</div>` : ""}
       </div>
     </div>
   `).join("");
